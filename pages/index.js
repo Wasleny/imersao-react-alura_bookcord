@@ -1,36 +1,7 @@
 import { Box, Button, Text, TextField, Image } from "@skynexui/components";
+import { useRouter } from "next/router";
+import { useState } from "react";
 import appConfig from "../config.json";
-
-function GlobalStyle() {
-  return (
-    <style global jsx>{`
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        list-style: none;
-      }
-      body {
-        font-family: "Open Sans", sans-serif;
-      }
-      /* App fit Height */
-      html,
-      body,
-      #__next {
-        min-height: 100vh;
-        display: flex;
-        flex: 1;
-      }
-      #__next {
-        flex: 1;
-      }
-      #__next > * {
-        flex: 1;
-      }
-      /* ./App fit Height */
-    `}</style>
-  );
-}
 
 function Title(props) {
   const Tag = props.tag || "h1";
@@ -63,11 +34,27 @@ function Title(props) {
 // export default HomePage;
 
 export default function HomePage() {
-  const username = "Wasleny";
+  const [username, setUsername] = useState("Wasleny");
+  const [urlImage, setUrlImage] = useState(`https://github.com/${username}.png`);
+  const route = useRouter();
+
+  const handleChange = (e) => {
+    setUsername(e.target.value);
+    if (e.target.value.length > 2) {
+      setUrlImage(`https://github.com/${username}.png`);
+    } else {
+      setUrlImage('');
+    }
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    console.log("enytou");
+    route.push("/chat");
+  };
 
   return (
     <>
-      <GlobalStyle />
       <Box
         styleSheet={{
           display: "flex",
@@ -102,6 +89,7 @@ export default function HomePage() {
           {/* Formulário */}
           <Box
             as="form"
+            onSubmit={(e) => onSubmit(e)}
             styleSheet={{
               display: "flex",
               flexDirection: "column",
@@ -123,6 +111,8 @@ export default function HomePage() {
               {appConfig.name}
             </Text>
             <TextField
+              value={username}
+              onChange={(e) => handleChange(e)}
               fullWidth
               textFieldColors={{
                 neutral: {
@@ -168,7 +158,7 @@ export default function HomePage() {
                 borderRadius: "50%",
                 marginBottom: "16px",
               }}
-              src={`https://github.com/${username}.png`}
+              src={urlImage}
             />
             <Text
               variant="body4"
