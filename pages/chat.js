@@ -216,7 +216,7 @@ function MessageList({ listMessages, handleRemoveMessage }) {
                 }}
                 style={{ float: "right" }}
               />
-            </Text>git 
+            </Text>
           </Box>
           {message.content}
         </Text>
