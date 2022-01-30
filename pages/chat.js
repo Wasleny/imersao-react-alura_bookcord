@@ -1,12 +1,31 @@
 import { Box, Text, TextField, Image, Button } from "@skynexui/components";
 import React, { useEffect, useReducer, useState } from "react";
 import { IoSend } from "react-icons/io5";
-import { CgCloseO } from "react-icons/cg";
 import appConfig from "../config.json";
+import { createClient } from "@supabase/supabase-js";
+import { useRouter } from "next/router";
+import { ButtonSendSticker } from "../src/components/ButtonSendSticker";
+
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQ5MTAwMCwiZXhwIjoxOTU5MDY3MDAwfQ.xH5hCLO-tCuSKZMyukqNqfoZwPYbXZTQy-WgtQXkLRw";
+const SUPABASE_URL = "https://crqulkfafcijacxmxtut.supabase.co";
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const listenMessages = (handleNewMessage) => {
+  return supabaseClient
+    .from("messages")
+    .on("INSERT", (response) => {
+      console.log(response);
+      handleNewMessage(response.new);
+    })
+    .subscribe();
+};
 
 export default function ChatPage() {
   const [message, setMessage] = useState("");
   const [listMessages, setListMessages] = useState([]);
+  const route = useRouter();
+  const activeUser = route.query.username;
 
   const onChange = (e) => {
     setMessage(e.target.value);
@@ -21,17 +40,33 @@ export default function ChatPage() {
 
   const handleNewMessage = (newMessage) => {
     const msg = {
-      id: listMessages.length,
-      from: "Wasleny",
+      from: activeUser,
       content: newMessage,
     };
-    setListMessages([msg, ...listMessages]);
+
+    supabaseClient
+      .from("messages")
+      .insert([msg])
+      .then(({ data }) => {});
+
     setMessage("");
   };
 
-  const handleRemoveMessage = (id) => {
-    setListMessages(listMessages.filter((message) => message.id !== id));
-  };
+  useEffect(() => {
+    supabaseClient
+      .from("messages")
+      .select("*")
+      .order("id", { ascending: false })
+      .then(({ data }) => {
+        setListMessages(data);
+      });
+
+    listenMessages((newMessage) => {
+      setListMessages((currentList) => {
+        return [newMessage, ...currentList];
+      });
+    });
+  }, []);
 
   return (
     <Box
@@ -76,10 +111,7 @@ export default function ChatPage() {
             padding: "16px",
           }}
         >
-          <MessageList
-            listMessages={listMessages}
-            handleRemoveMessage={handleRemoveMessage}
-          />
+          <MessageList listMessages={listMessages} />
 
           <Box
             as="form"
@@ -122,6 +154,11 @@ export default function ChatPage() {
                 },
               }}
             />
+            <ButtonSendSticker
+              onStickerClick={(sticker) => {
+                handleNewMessage(":sticker:" + sticker);
+              }}
+            />
           </Box>
         </Box>
       </Box>
@@ -158,7 +195,7 @@ function MessageList({ listMessages, handleRemoveMessage }) {
     <Box
       tag="ul"
       styleSheet={{
-        overflow: "scroll",
+        overflowY: "scroll",
         display: "flex",
         flexDirection: "column-reverse",
         flex: 1,
@@ -204,21 +241,13 @@ function MessageList({ listMessages, handleRemoveMessage }) {
               tag="span"
             >
               {new Date().toLocaleDateString()}
-              <Button
-                label={<CgCloseO size={30} />}
-                onClick={() => handleRemoveMessage(message.id)}
-                styleSheet={{
-                  color: "#fff",
-                  backgroundColor: "transparent",
-                  hover: {
-                    backgroundColor: "transparent",
-                  },
-                }}
-                style={{ float: "right" }}
-              />
             </Text>
           </Box>
-          {message.content}
+          {message.content.startsWith(":sticker:") ? (
+            <Image src={message.content.replace(":sticker:", "")} />
+          ) : (
+            message.content
+          )}
         </Text>
       ))}
     </Box>

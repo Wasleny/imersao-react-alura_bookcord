@@ -49,8 +49,7 @@ export default function HomePage() {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    console.log("enytou");
-    route.push("/chat");
+    route.push(`/chat?username=${username}`);
   };
 
   return (
